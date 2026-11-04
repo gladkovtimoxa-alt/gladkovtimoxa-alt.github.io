@@ -1,0 +1,53 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Как распознать таблицу с фото и перенести в Excel — KaTiAi</title><meta name="description" content="Таблица на фото превращается в Excel без ручного перепечатывания: ИИ-режим распознаёт строки и столбцы, а кнопка CSV выгружает ячейки. Пошаговая инструкция и проверка результата."><link rel="canonical" href="https://katiai.ru/blog/raspoznat-tablicu-s-foto-v-excel"><meta property="og:title" content="Как распознать таблицу с фото и перенести в Excel"><meta property="og:description" content="Таблица на фото превращается в Excel без ручного перепечатывания: ИИ-режим распознаёт строки и столбцы, а кнопка CSV выгружает ячейки. Пошаговая инструкция и проверка результата."><meta property="og:url" content="https://katiai.ru/blog/raspoznat-tablicu-s-foto-v-excel"><meta property="og:type" content="article"><meta property="og:image" content="https://katiai.ru/img/table-to-excel.png"><meta name="twitter:card" content="summary_large_image"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Как распознать таблицу с фото и перенести в Excel","datePublished":"2026-10-21T03:42:11+00:00","dateModified":"2026-10-21T03:42:11+00:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://katiai.ru/blog/raspoznat-tablicu-s-foto-v-excel"},"image":"https://katiai.ru/img/table-to-excel.png","author":{"@type":"Person","name":"Тимофей Гладков","url":"https://katiai.ru/about.html"},"publisher":{"@type":"Organization","name":"KaTiAi","url":"https://katiai.ru","logo":{"@type":"ImageObject","url":"https://katiai.ru/brand/avatar_1024.png"}}}</script>
+<link rel="icon" type="image/svg+xml" href="/brand/mark.svg">
+<link rel="alternate" type="application/rss+xml" title="Блог KaTiAi" href="/blog/rss.xml">
+<style>
+:root{--bg:#0B0A12;--fg:#F2F0FA;--muted:#A3A3B5;--accent:#3DF5C8}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 Onest,system-ui,sans-serif;max-width:760px;margin:0 auto;padding:24px 16px 80px}
+a{color:var(--accent)} h1{font-size:30px} h2{font-size:22px;margin-top:32px} h3{font-size:18px}
+.muted{color:var(--muted)} img{max-width:100%;border-radius:8px} .card{border-top:1px solid rgba(255,255,255,.12);padding:20px 0}
+code,pre{background:rgba(255,255,255,.06);border-radius:6px} pre{padding:12px;overflow-x:auto} code{padding:2px 5px}
+.side-banner{position:fixed;left:24px;top:140px;width:220px;padding:18px;border-radius:14px;
+  background:linear-gradient(160deg,#2A2150,#0B0A12);border:1px solid rgba(155,123,255,.35);
+  color:var(--fg);text-decoration:none;display:flex;flex-direction:column;gap:8px;line-height:1.35}
+.side-banner strong{font-size:17px} .side-banner em{color:var(--accent);font-style:normal;margin-top:4px}
+@media (max-width:1180px){.side-banner{display:none}}
+</style></head><body><a class="side-banner" href="https://netsecretnet.ru" target="_blank" rel="noopener"><strong>Личная скрытая сеть</strong><span>для безопасности в интернете</span><em>Подключиться →</em></a><p><a href="/blog">← Блог KaTiAi</a></p><h1>Как распознать таблицу с фото и перенести в Excel</h1><p class="muted">21.10.2026 · автор: <a href="/about.html">Тимофей Гладков</a></p><img src="/img/table-to-excel.png" alt="Как распознать таблицу с фото и перенести в Excel"><p>Таблица на фотографии — для обычного распознавания это не таблица, а набор цифр и букв, которые потом нужно вручную раскладывать по ячейкам. В KaTiAi эту часть берёт на себя ИИ-режим: он распознаёт строки и столбцы, а не просто текст, и у каждой таблицы появляется кнопка CSV — файл, который Excel открывает без ручной вставки.</p>
+<blockquote>
+<p>🎬 <strong>Смотрите, как это работает</strong> — 3D-анимация всего процесса: фото фактуры → сканирование → ячейки перелетают в Excel. <a href="/anim/table-to-excel.html">Смотреть демо</a> (откроется в отдельном окне, ~14 секунд, зациклено).</p>
+</blockquote>
+<h2>Почему обычный OCR ломает таблицы</h2>
+<p>Обычный текст распознаётся линейно — строка за строкой. Таблица двумерная: важно не только, какие цифры, но и в каком столбце каждая из них стоит. Линейный распознаватель эту привязку теряет, и на выходе получается список чисел, который приходится пересобирать вручную.</p>
+<p>Две вещи решают проблему:</p>
+<ol>
+<li>Все столбцы должны попасть в кадр — снимайте таблицу сверху, без обрезки краёв.</li>
+<li>Распознаватель должен понимать структуру — где начинается и заканчивается ячейка, а не только что в ней написано.</li>
+</ol>
+<h2>Как распознать таблицу с фото в KaTiAi</h2>
+<ol>
+<li>Загрузите фото на <a href="https://katiai.ru">katiai.ru</a> — бесплатный режим работает прямо в браузере, файл не уходит на сервер.</li>
+<li>Включите ИИ-режим (кнопка «✦ ИИ»): модель распознаёт строки и столбцы, а не только текст.</li>
+<li>У каждой распознанной таблицы появляется кнопка CSV — нажмите её и сохраните файл.</li>
+<li>Откройте CSV в Excel: «Данные → Из текста/CSV». Ячейки встают на свои места, и можно сразу добавлять формулы.</li>
+</ol>
+<h2>Что проверить после выгрузки</h2>
+<p>Минута на три проверки ловит почти все ошибки распознавания:</p>
+<ul>
+<li><strong>Строки.</strong> Первая строка обычно — заголовки. Сравните её с фото.</li>
+<li><strong>Слипшиеся ячейки.</strong> Цифры из соседних столбцов, склеенные в одну, — самый частый брак.</li>
+<li><strong>Типы данных.</strong> Валюта и проценты в CSV приходят текстом — при необходимости поменяйте тип ячейки в Excel.</li>
+</ul>
+<h2>Сколько это стоит</h2>
+<ul>
+<li><strong>Бесплатный режим</strong> — распознавание прямо в браузере, файл остаётся у вас. Подходит для типовых документов.</li>
+<li><strong>ИИ-режим — 2 ₽ за страницу</strong> — нужен, когда важна структура: таблицы, формы, документы с колонками.</li>
+</ul>
+<h2>Частые вопросы</h2>
+<p><strong>Какой формат удобнее — CSV или DOCX?</strong>
+Для Excel — CSV: он сразу понимает границы ячеек. DOCX нужен, когда таблица должна остаться внутри текста документа.</p>
+<p><strong>Несколько таблиц на одном фото — как выгрузить?</strong>
+Каждая распознанная таблица получает свою кнопку CSV — выгружайте по очереди.</p>
+<p><strong>Столбец на фото обрезан — распознает ли KaTiAi?</strong>
+Нет, додумывать обрезанные данные распознавание не умеет. Переснимите таблицу целиком — это быстрее, чем чинить файл потом.</p><div class="card">👉 Подпишитесь на <a href="https://max.ru/se14025453_biz" rel="noopener">Макс ✅</a> и <a href="https://t.me/Ka_Ti_Ai" rel="noopener">Телеграм-канал ↩️</a> — новые приёмы, разборы документов и бонусы.</div></body></html>

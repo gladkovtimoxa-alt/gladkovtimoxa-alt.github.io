@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 64" role="img" aria-label="KaTiAi">
+  <defs>
+    <linearGradient id="kl-body" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FF5E7E"/><stop offset=".55" stop-color="#9B7BFF"/><stop offset="1" stop-color="#3DF5C8"/>
+    </linearGradient>
+    <linearGradient id="kl-ai" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3DF5C8"/><stop offset="1" stop-color="#9B7BFF"/>
+    </linearGradient>
+  </defs>
+  <path d="M8 22 L8 12 L18 18 Q32 14 46 18 L56 12 L56 22 Q60 32 56 44 Q52 58 32 58 Q12 58 8 44 Q4 32 8 22 Z" fill="url(#kl-body)"/>
+  <path d="M14 37 Q32 21 50 37 Q32 53 14 37 Z" fill="#F6F3EE"/>
+  <rect x="29.5" y="27" width="5" height="20" rx="2.5" fill="url(#kl-ai)"/>
+  <text x="70" y="45" font-family="Tektur, 'Onest', system-ui, sans-serif" font-size="34" font-weight="700" fill="currentColor" letter-spacing="-.5">KaTi<tspan fill="url(#kl-ai)">Ai</tspan></text>
+</svg>

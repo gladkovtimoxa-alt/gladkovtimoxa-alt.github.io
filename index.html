@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="ru" dir="ltr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KaTiAi — фото в готовый документ</title>
+<meta name="description" content="KaTiAi превращает фото в документ: DOCX, PDF, Р7 (ODT). Бесплатно в браузере, без водяных знаков. Платный режим распознаёт рукопись и таблицы, переводит на 30+ языков.">
+<meta name="theme-color" content="#0B0A12">
+<link rel="icon" type="image/svg+xml" href="brand/mark.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Tektur:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/katiai.css?v=20261019">
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.min.js",
+            "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}
+</script>
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=113704930', 'ym');
+
+    ym(113704930, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/113704930" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
+<!-- Structured data for GEO/AI citation (SEO+GEO audit, 30.10.2026): Organization identifies
+     the brand entity, SoftwareApplication describes the product for LLM answer extraction. -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Organization","name":"KaTiAi","url":"https://katiai.ru",
+"logo":"https://katiai.ru/brand/avatar_1024.png",
+"sameAs":["https://t.me/Ka_Ti_Ai","https://max.ru/se14025453_biz"]}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"KaTiAi",
+"applicationCategory":"BusinessApplication","operatingSystem":"Web",
+"description":"KaTiAi превращает фото в готовый документ: распознаёт печатный и рукописный текст, таблицы на 100+ языках. Бесплатный режим работает в браузере без загрузки фото на сервер; платный режим дополнительно распознаёт рукопись, таблицы и переводит на 30+ языков.",
+"url":"https://katiai.ru","image":"https://katiai.ru/brand/avatar_1024.png",
+"offers":[{"@type":"Offer","name":"Free","price":"0","priceCurrency":"RUB",
+"description":"До 3 страниц в день бесплатно в браузере, 100+ языков, экспорт в DOCX, PDF, ODT, TXT"},
+{"@type":"Offer","name":"Pro","price":"100","priceCurrency":"RUB",
+"description":"Распознавание рукописи и таблиц, перевод на 30+ языков, PDF с поиском по тексту"}]}
+</script>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="KaTiAi"><img src="brand/mark.svg" alt=""><span>KaTi<em class="grad-ai" style="font-style:normal">Ai</em></span></a>
+    <nav class="links" aria-label="main">
+      <a href="#features" data-i18n="nav.features">Возможности</a>
+      <a href="#how" data-i18n="nav.how">Как это работает</a>
+      <a href="#pricing" data-i18n="nav.pricing">Тарифы</a>
+      <a href="#faq" data-i18n="nav.faq">Вопросы</a>
+      <a href="/blog" data-i18n="nav.blog">Блог</a>
+      <a href="/about.html" data-i18n="nav.about">О нас</a>
+    </nav>
+    <div class="spacer"></div>
+    <label class="sr" for="lang" data-i18n="lang.label">Язык</label>
+    <select id="lang" class="lang-select">
+      <option value="ru">Русский</option><option value="en">English</option><option value="es">Español</option>
+      <option value="de">Deutsch</option><option value="fr">Français</option><option value="pt">Português</option>
+      <option value="zh">中文</option><option value="ar">العربية</option>
+    </select>
+    <button class="icon-btn" id="theme" type="button" data-i18n-attr="aria-label:theme.toggle" aria-label="Тема">◐</button>
+    <button class="btn small ghost" id="account-btn" type="button" data-i18n="nav.login">Войти</button>
+    <a class="btn small primary" href="#app" data-i18n="nav.open">Открыть KaTiAi</a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero" aria-labelledby="hero-title">
+    <canvas id="scene" aria-hidden="true"></canvas>
+    <div class="wrap">
+      <div>
+        <span class="eyebrow"><i></i><span data-i18n="hero.eyebrow">Фото → документ · 100+ языков</span></span>
+        <h1 id="hero-title"><span data-i18n="hero.t1">Видит текст</span><br><span class="grad" data-i18n="hero.t2">даже в темноте</span></h1>
+        <p class="lead" data-i18n="hero.sub">KaTiAi превращает фото в готовый документ — DOCX, PDF или Р7 (ODT). Бесплатно, а ваши снимки не покидают устройство.</p>
+        <div class="ctas">
+          <a class="btn primary" href="#app" data-i18n="hero.cta_free">Распознать бесплатно</a>
+          <a class="btn ai" href="#pricing"><span class="grad-ai" data-i18n="hero.cta_pro">Рукопись и таблицы Pro</span></a>
+        </div>
+        <div class="chips">
+          <span class="chip"><span class="dot"></span><span data-i18n="hero.chip1">Фото остаются на вашем устройстве</span></span>
+          <span class="chip"><span class="dot" style="background:var(--coral)"></span><span data-i18n="hero.chip2">Без водяных знаков</span></span>
+          <span class="chip"><span class="dot" style="background:var(--lilac)"></span><span data-i18n="hero.chip3">Рукопись и таблицы — в Pro</span></span>
+        </div>
+      </div>
+      <div class="hero-fallback"><img src="brand/mark.svg" alt=""></div>
+    </div>
+  </section>
+
+  <section id="app" aria-labelledby="app-title" style="padding-top:20px" hidden>
+    <div class="wrap">
+      <h2 id="app-title" class="sr" data-i18n="app.title">Конвертер</h2>
+      <div class="glass converter">
+        <div class="pane">
+          <div class="mode" role="group" data-i18n-attr="aria-label:app.mode">
+            <button type="button" data-mode="free" aria-pressed="true" data-i18n="app.mode_free">Бесплатно · в браузере</button>
+            <button type="button" data-mode="ai" aria-pressed="false"><span data-i18n="app.mode_ai">Рукопись и таблицы</span> <span class="pro-badge">PRO</span></button>
+          </div>
+          <p class="hint" id="mode-hint" data-i18n="app.mode_free_hint">Распознаём прямо на вашем устройстве.</p>
+          <div class="free-limit" id="free-limit" hidden>
+            <button class="btn" type="button" id="watch-ad" data-i18n="app.watch_ad">Посмотреть рекламу +1 ₽</button>
+          </div>
+
+          <div class="drop" id="drop" tabindex="0" role="button" data-i18n-attr="aria-label:app.drop">
+            <span class="scanline"></span>
+            <div class="big" aria-hidden="true">⬆</div>
+            <b data-i18n="app.drop">Перетащите фото или нажмите</b>
+            <small data-i18n="app.drop_hint">JPG, PNG, WEBP · можно несколько · вставка из буфера Ctrl+V</small>
+          </div>
+          <input type="file" id="file" accept="image/*" multiple hidden>
+          <input type="file" id="camera" accept="image/*" capture="environment" hidden>
+          <div class="row">
+            <button class="btn small" type="button" id="camera-btn">📷 <span data-i18n="app.camera">Снять камерой</span></button>
+            <span class="hint" data-i18n="app.reorder">Перетаскивайте миниатюры, чтобы поменять порядок страниц</span>
+          </div>
+          <div class="thumbs" id="thumbs" aria-live="polite"></div>
+
+          <div class="row">
+            <div class="grow" id="lang-free-box">
+              <label class="lbl" for="ocr-lang" data-i18n="app.lang">Язык текста</label>
+              <select id="ocr-lang" class="field"></select>
+            </div>
+            <div class="grow" id="ai-kind-box" hidden>
+              <label class="lbl" for="ai-kind" data-i18n="app.ai_kind">Что на фото</label>
+              <select id="ai-kind" class="field">
+                <option value="auto" data-i18n="app.kind_auto">Определить автоматически</option>
+                <option value="handwriting" data-i18n="app.kind_hand">Рукописный текст</option>
+                <option value="table" data-i18n="app.kind_table">Таблицы</option>
+              </select>
+            </div>
+            <div class="grow" id="ai-tr-box" hidden>
+              <label class="lbl" for="ai-tr" data-i18n="app.translate">Перевести на</label>
+              <select id="ai-tr" class="field"><option value="" data-i18n="app.no_translate">Не переводить</option></select>
+            </div>
+          </div>
+          <div class="row">
+            <button class="btn primary" type="button" id="go" disabled>✦ <span data-i18n="app.go">Распознать</span></button>
+            <button class="btn ghost small" type="button" id="clear" data-i18n="app.clear">Очистить</button>
+          </div>
+          <div class="progress" aria-hidden="true"><i id="bar"></i></div>
+          <div class="status" id="status" role="status" aria-live="polite"></div>
+
+          <div class="row" style="justify-content:space-between">
+            <div class="tabs" role="tablist">
+              <button type="button" role="tab" data-view="text" aria-selected="true" data-i18n="app.view_text">Текст</button>
+              <button type="button" role="tab" data-view="markdown" aria-selected="false" hidden data-i18n="app.view_md">Структура</button>
+              <button type="button" role="tab" data-view="translation" aria-selected="false" hidden data-i18n="app.view_tr">Перевод</button>
+            </div>
+            <button class="linkbtn" type="button" id="copy" data-i18n="app.copy">Копировать</button>
+          </div>
+          <label class="sr" for="editor" data-i18n="app.result">Результат</label>
+          <textarea class="editor" id="editor" spellcheck="false" data-i18n-attr="placeholder:app.placeholder"></textarea>
+          <p class="hint" id="unclear" hidden data-i18n="app.unclear">Неразборчивые места помечены [?] — проверьте их.</p>
+          <div class="row">
+            <div class="grow">
+              <label class="lbl" for="fname" data-i18n="app.filename">Имя файла</label>
+              <input class="field" id="fname" type="text" autocomplete="off">
+            </div>
+          </div>
+          <div class="exports">
+            <button class="btn" type="button" data-fmt="docx">DOCX</button>
+            <button class="btn" type="button" data-fmt="pdf">PDF</button>
+            <button class="btn" type="button" data-fmt="odt" title="Р7-Офис / LibreOffice">Р7 (ODT)</button>
+            <button class="btn" type="button" data-fmt="txt">TXT</button>
+            <button class="btn" type="button" data-fmt="photo" data-i18n="app.export_photo">Фото</button>
+          </div>
+          <button class="btn ai" type="button" id="spdf"><span class="grad-ai" data-i18n="app.spdf">PDF с поиском по тексту</span> <span class="pro-badge">PRO</span></button>
+          <div class="mail-send" id="mail-send" hidden style="margin-top:10px">
+            <div class="row">
+              <div class="grow">
+                <label class="lbl" for="mail-to" data-i18n="app.mail_to">Отправить на почту</label>
+                <input class="field" id="mail-to" type="email" autocomplete="off" list="contacts" placeholder="name@example.com">
+                <datalist id="contacts"></datalist>
+              </div>
+              <div>
+                <label class="lbl">&nbsp;</label>
+                <button class="btn ai" type="button" id="send-mail"><span class="grad-ai" data-i18n="app.mail_send">Отправить</span> <span class="pro-badge">PRO</span></button>
+              </div>
+            </div>
+            <p class="hint" data-i18n="app.mail_note">Платным пользователям: пошлём документ вложением и запомним адрес в книге.</p>
+          </div>
+          <p class="hint" data-i18n="app.export_note">TXT создаётся на вашем устройстве. Для DOCX, PDF и Р7 (ODT) на сервер уходит только текст, без фото.</p>
+          <p class="hint" data-i18n="app.plan_free_note">Бесплатно: до 3 страниц в день в браузере, 100+ языков, экспорт в DOCX, PDF, Р7, TXT и фото — без регистрации и водяных знаков.</p>
+          <p class="hint" data-i18n="app.plan_pro_note">Pro: без дневного лимита — рукопись, таблицы, перевод на 30+ языков, PDF с поиском по тексту и отправка на почту.</p>
+        </div>
+
+        <aside class="side">
+          <div class="card" id="quota-card">
+            <h3>✦ <span data-i18n="app.ai_balance">Баланс платного режима</span></h3>
+            <div class="meter"><span id="quota-text" class="muted">—</span><span id="plan-name" class="pro-badge" hidden>PRO</span></div>
+            <div class="progress"><i id="quota-bar"></i></div>
+            <p class="hint" id="quota-hint" style="margin-top:10px" data-i18n="app.quota_guest">Войдите, чтобы распознавать рукопись и таблицы — 2 ₽ за страницу с баланса.</p>
+          </div>
+          <div class="card">
+            <h3>🗂 <span data-i18n="app.history">История на этом устройстве</span></h3>
+            <label class="hist-select-all" id="history-select-all-row" hidden><input type="checkbox" id="history-select-all"><span data-i18n="app.history_select_all">Выбрать все</span></label>
+            <div class="history" id="history"></div>
+            <div class="mail-send" id="history-batch" hidden style="margin-top:10px">
+              <div class="row">
+                <div class="grow">
+                  <label class="lbl" for="history-mail-to" data-i18n="app.mail_to">Отправить на почту</label>
+                  <input class="field" id="history-mail-to" type="email" autocomplete="off" list="contacts" placeholder="name@example.com">
+                </div>
+                <div>
+                  <label class="lbl">&nbsp;</label>
+                  <button class="btn ai" type="button" id="history-send-mail" disabled><span class="grad-ai" data-i18n="app.mail_send_selected">Отправить выбранное</span> <span class="pro-badge">PRO</span></button>
+                </div>
+              </div>
+              <p class="status" id="history-mail-status" role="status"></p>
+            </div>
+            <button class="linkbtn" type="button" id="history-clear" style="margin-top:10px" data-i18n="app.history_clear">Очистить историю</button>
+          </div>
+          <div class="card">
+            <h3>🔒 <span data-i18n="app.privacy_t">Приватность</span></h3>
+            <p class="hint" data-i18n="app.privacy_d">В бесплатном режиме фото распознаются в вашем браузере. В платном режиме фото отправляются на распознавание и не хранятся после ответа.</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section id="features" aria-labelledby="features-title">
+    <div class="wrap">
+      <div class="head reveal"><h2 id="features-title" data-i18n="features.title">Почему KaTiAi</h2><p data-i18n="features.sub">Всё, чего обычно не хватает бесплатным сканерам, — в одном окне.</p></div>
+      <div class="bento">
+        <article class="tile big reveal" data-tilt>
+          <span class="glow" style="background:var(--mint)"></span>
+          <div class="ico">🔒</div>
+          <h3 data-i18n="f1.t">Приватно по умолчанию</h3>
+          <p data-i18n="f1.d">Бесплатный режим работает в браузере на WebAssembly: фото не загружаются на сервер.</p>
+          <div class="demo" aria-hidden="true"><div class="ln" style="width:70%"></div><div class="ln" style="width:85%"></div><div class="ln" style="width:55%"></div><div class="ln" style="width:78%"></div><div class="ln" style="width:62%"></div><div class="ln" style="width:80%"></div><div class="beam"></div></div>
+        </article>
+        <article class="tile wide reveal" data-tilt><span class="glow" style="background:var(--lilac)"></span><div class="ico">✍️</div>
+          <h3 data-i18n="f2.t">Рукопись и таблицы</h3><p data-i18n="f2.d">Распознаёт почерк и таблицы, а неразборчивое помечает [?] — не придумывает.</p></article>
+        <article class="tile wide reveal" data-tilt><span class="glow" style="background:var(--coral)"></span><div class="ico">📄</div>
+          <h3 data-i18n="f3.t">Документ, а не «скопировать»</h3><p data-i18n="f3.d">DOCX с таблицами и заголовками, PDF, Р7 (ODT), TXT. В Pro — PDF с поиском из десятков фото.</p></article>
+        <article class="tile third reveal" data-tilt><div class="ico">🌍</div>
+          <h3 data-i18n="f4.t">100+ языков</h3><p data-i18n="f4.d">Распознавание на 100+ языках, перевод на 30+, интерфейс на 8 языках.</p></article>
+        <article class="tile third reveal" data-tilt><div class="ico">🗂</div>
+          <h3 data-i18n="f5.t">Пакетно</h3><p data-i18n="f5.d">Несколько фото — один документ. Порядок страниц меняется перетаскиванием.</p></article>
+        <article class="tile third reveal" data-tilt><div class="ico">🎁</div>
+          <h3 data-i18n="f6.t">Честно бесплатно</h3><p data-i18n="f6.d">Без водяных знаков. Платите, только если нужны рукопись, таблицы или перевод.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" aria-labelledby="how-title">
+    <div class="wrap">
+      <div class="head reveal"><h2 id="how-title" data-i18n="how.title">Три шага</h2></div>
+      <div class="steps">
+        <div class="step reveal"><h3 data-i18n="how.s1">Снимите или загрузите фото</h3><p data-i18n="how.s1d">Камера телефона, файлы или вставка из буфера.</p></div>
+        <div class="step reveal"><h3 data-i18n="how.s2">KaTiAi распознаёт текст</h3><p data-i18n="how.s2d">Бесплатно на устройстве — или платно для рукописи и таблиц.</p></div>
+        <div class="step reveal"><h3 data-i18n="how.s3">Скачайте документ</h3><p data-i18n="how.s3d">Поправьте текст и сохраните в DOCX, PDF, Р7 (ODT) или TXT.</p></div>
+      </div>
+      <!-- HowTo schema (SEO+GEO audit, 30.10.2026): mirrors the 3 steps above. Placed outside
+           the <table> below on purpose — a <script> as a direct table child gets foster-parented
+           out by HTML parsers, which would silently move it (and the JSON-LD with it) elsewhere. -->
+      <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"HowTo","name":"Как превратить фото в документ с KaTiAi",
+      "step":[
+      {"@type":"HowToStep","position":1,"name":"Снимите или загрузите фото","text":"Камера телефона, файлы или вставка из буфера."},
+      {"@type":"HowToStep","position":2,"name":"KaTiAi распознаёт текст","text":"Бесплатно на устройстве — или платно для рукописи и таблиц."},
+      {"@type":"HowToStep","position":3,"name":"Скачайте документ","text":"Поправьте текст и сохраните в DOCX, PDF, Р7 (ODT) или TXT."}
+      ]}
+      </script>
+      <div class="table-scroll reveal" style="margin-top:46px">
+        <table class="compare">
+          <caption class="sr" data-i18n="cmp.title">Сравнение</caption>
+          <thead><tr><th></th><th data-i18n="cmp.typical">Типичный бесплатный сканер</th><th>KaTiAi</th></tr></thead>
+          <tbody>
+            <tr><td data-i18n="cmp.r1">Куда уходят фото</td><td class="no" data-i18n="cmp.r1a">на сервер сервиса</td><td class="yes" data-i18n="cmp.r1b">остаются в браузере</td></tr>
+            <tr><td data-i18n="cmp.r2">Водяные знаки</td><td class="no" data-i18n="cmp.r2a">часто</td><td class="yes" data-i18n="cmp.r2b">нет</td></tr>
+            <tr><td data-i18n="cmp.r3">Результат</td><td class="no" data-i18n="cmp.r3a">часто только «скопировать»</td><td class="yes" data-i18n="cmp.r3b">DOCX, PDF, MD, TXT</td></tr>
+            <tr><td data-i18n="cmp.r5">Рукопись и таблицы</td><td class="no" data-i18n="cmp.r5a">слабо</td><td class="yes" data-i18n="cmp.r5b">Рукопись и таблицы Pro</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing" aria-labelledby="pricing-title">
+    <div class="wrap">
+      <div class="head reveal"><h2 id="pricing-title" data-i18n="pricing.title">Тарифы</h2><p data-i18n="pricing.sub">Начните бесплатно. Платите, только если нужно распознать рукопись, таблицы или перевести текст.</p></div>
+      <div class="plans">
+        <div class="glass plan reveal">
+          <div class="name">Free</div>
+          <div class="price"><span>0</span> <small data-i18n="plan.forever">навсегда</small></div>
+          <ul>
+            <li data-i18n="plan.f1">До 3 страниц в день бесплатно в браузере</li>
+            <li data-i18n="plan.f2">100+ языков распознавания</li>
+            <li data-i18n="plan.f3">Экспорт в DOCX, PDF, Р7 (ODT), TXT</li>
+            <li data-i18n="plan.f4">История на вашем устройстве</li>
+            <li data-i18n="plan.f5">5 страниц Pro-режима бесплатно при регистрации, потом 2 ₽ за страницу</li>
+          </ul>
+          <a class="btn" href="#app" data-i18n="plan.free_cta">Начать бесплатно</a>
+        </div>
+        <div class="glass plan pro reveal" data-tier-idx="0">
+          <div class="name">Pro <span class="pro-badge">AI</span> <span class="muted" style="text-decoration:line-through">1 000 ₽</span></div>
+          <div class="price"><span class="tier-price">100 ₽</span> <small data-i18n="plan.per_month">в месяц</small></div>
+          <p class="tier-daily">150 генераций в месяц</p>
+          <ul>
+            <li data-i18n="plan.p1">Всё из Free</li>
+            <li data-i18n="plan.p2">Распознаёт рукопись и таблицы, сохраняет структуру документа</li>
+            <li data-i18n="plan.p3">Перевод на 30+ языков</li>
+            <li data-i18n="plan.p4">PDF с поиском по тексту из многих фото</li>
+            <li data-i18n="plan.p5">Отмена в один клик</li>
+          </ul>
+          <button class="btn primary buy-tier" type="button" data-i18n="plan.pro_cta">Оформить Pro</button>
+        </div>
+        <div class="glass plan pro popular reveal" data-tier-idx="1">
+          <span class="popular-badge" data-i18n="plan.popular">Популярно</span>
+          <div class="name">Pro <span class="pro-badge">AI</span> <span class="muted" style="text-decoration:line-through">5 000 ₽</span></div>
+          <div class="price"><span class="tier-price">500 ₽</span> <small data-i18n="plan.per_month">в месяц</small></div>
+          <p class="tier-daily">750 генераций в месяц</p>
+          <ul>
+            <li data-i18n="plan.p1">Всё из Free</li>
+            <li data-i18n="plan.p2">Распознаёт рукопись и таблицы, сохраняет структуру документа</li>
+            <li data-i18n="plan.p3">Перевод на 30+ языков</li>
+            <li data-i18n="plan.p4">PDF с поиском по тексту из многих фото</li>
+            <li data-i18n="plan.p5">Отмена в один клик</li>
+          </ul>
+          <button class="btn primary buy-tier" type="button" data-i18n="plan.pro_cta">Оформить Pro</button>
+        </div>
+        <div class="glass plan pro reveal" data-tier-idx="2">
+          <div class="name">Pro <span class="pro-badge">AI</span> <span class="muted" style="text-decoration:line-through">10 000 ₽</span></div>
+          <div class="price"><span class="tier-price">1000 ₽</span> <small data-i18n="plan.per_month">в месяц</small></div>
+          <p class="tier-daily">1500 генераций в месяц</p>
+          <ul>
+            <li data-i18n="plan.p1">Всё из Free</li>
+            <li data-i18n="plan.p2">Распознаёт рукопись и таблицы, сохраняет структуру документа</li>
+            <li data-i18n="plan.p3">Перевод на 30+ языков</li>
+            <li data-i18n="plan.p4">PDF с поиском по тексту из многих фото</li>
+            <li data-i18n="plan.p5">Отмена в один клик</li>
+          </ul>
+          <button class="btn primary buy-tier" type="button" data-i18n="plan.pro_cta">Оформить Pro</button>
+        </div>
+      </div>
+      <p class="price-note" data-i18n="pricing.note">Подписка продлевается автоматически каждые 30 дней. Отключить — в аккаунте в один клик. За 3 дня до списания пришлём письмо.</p>
+    </div>
+  </section>
+
+  <section id="faq" aria-labelledby="faq-title">
+    <div class="wrap">
+      <div class="head reveal"><h2 id="faq-title" data-i18n="faq.title">Вопросы</h2></div>
+      <div class="faq">
+        <details class="reveal"><summary data-i18n="faq.q1">Это правда бесплатно?</summary><p data-i18n="faq.a1">Да. Распознавание в браузере, экспорт и история бесплатны и без ограничений, без водяных знаков. Платно — только рукопись, таблицы и перевод: каждая такая страница стоит нам денег.</p><p class="faq-more"><a href="/blog/katiai-protiv-besplatnogo-onlain-ocr-gde-raznica" data-i18n="faq.more">Подробнее в блоге →</a></p></details>
+        <details class="reveal"><summary data-i18n="faq.q2">Куда уходят мои фото?</summary><p data-i18n="faq.a2">В бесплатном режиме — никуда: текст распознаётся в вашем браузере. Для DOCX и PDF на сервер отправляется только текст. В платном режиме (рукопись, таблицы, перевод) фото передаётся на распознавание языковой модели на нашем собственном оборудовании и не хранится после ответа. История лежит только на вашем устройстве.</p><p class="faq-more"><a href="/blog/pasportnye-dannye-v-besplatnom-onlayn-konvertere-risk-dlya-kompanii" data-i18n="faq.more">Подробнее в блоге →</a></p></details>
+        <details class="reveal"><summary data-i18n="faq.q3">Насколько точно распознаётся текст?</summary><p data-i18n="faq.a3">Чёткий печатный текст распознаётся хорошо; на размытых, тёмных и рукописных фото точность ниже. Платный режим лучше читает почерк и таблицы и помечает неразборчивое знаком [?]. Важные документы всегда проверяйте.</p><p class="faq-more"><a href="/blog/chto-oznachaet-ocr" data-i18n="faq.more">Подробнее в блоге →</a></p></details>
+        <details class="reveal"><summary data-i18n="faq.q4">Как отменить подписку?</summary><p data-i18n="faq.a4">В аккаунте нажмите «Отключить автопродление». Pro работает до конца оплаченного периода, новых списаний не будет.</p></details>
+        <details class="reveal"><summary data-i18n="faq.q5">Какие языки поддерживаются?</summary><p data-i18n="faq.a5">Распознавание — более 100 языков, включая русский, английский, украинский, казахский, китайский и арабский. Перевод в платном режиме — на 30+ языков. Интерфейс — на 8 языках.</p><p class="faq-more"><a href="/blog/raspoznat-i-perevesti-odno-deystvie-a-ne-dva-servisa" data-i18n="faq.more">Подробнее в блоге →</a></p></details>
+        <details class="reveal"><summary data-i18n="faq.q6">Работает на телефоне?</summary><p data-i18n="faq.a6">Да. Нажмите «Снять камерой» — откроется камера. Сайт работает в любом современном браузере, установка не нужна.</p><p class="faq-more"><a href="/blog/foto-v-dokument-na-ayfone" data-i18n="faq.more">Подробнее в блоге →</a></p></details>
+      </div>
+    </div>
+  </section>
+  <!-- FAQPage schema (SEO+GEO audit, 30.10.2026): mirrors the Russian default text above —
+       keep both in sync by hand if the FAQ copy changes, since i18n.js only swaps languages
+       client-side and crawlers without JS only ever see this Russian fallback anyway. -->
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+  {"@type":"Question","name":"Это правда бесплатно?","acceptedAnswer":{"@type":"Answer","text":"Да. Распознавание в браузере, экспорт и история бесплатны и без ограничений, без водяных знаков. Платно — только рукопись, таблицы и перевод: каждая такая страница стоит нам денег."}},
+  {"@type":"Question","name":"Куда уходят мои фото?","acceptedAnswer":{"@type":"Answer","text":"В бесплатном режиме — никуда: текст распознаётся в вашем браузере. Для DOCX и PDF на сервер отправляется только текст. В платном режиме (рукопись, таблицы, перевод) фото передаётся на распознавание языковой модели на нашем собственном оборудовании и не хранится после ответа. История лежит только на вашем устройстве."}},
+  {"@type":"Question","name":"Насколько точно распознаётся текст?","acceptedAnswer":{"@type":"Answer","text":"Чёткий печатный текст распознаётся хорошо; на размытых, тёмных и рукописных фото точность ниже. Платный режим лучше читает почерк и таблицы и помечает неразборчивое знаком [?]. Важные документы всегда проверяйте."}},
+  {"@type":"Question","name":"Как отменить подписку?","acceptedAnswer":{"@type":"Answer","text":"В аккаунте нажмите «Отключить автопродление». Pro работает до конца оплаченного периода, новых списаний не будет."}},
+  {"@type":"Question","name":"Какие языки поддерживаются?","acceptedAnswer":{"@type":"Answer","text":"Распознавание — более 100 языков, включая русский, английский, украинский, казахский, китайский и арабский. Перевод в платном режиме — на 30+ языков. Интерфейс — на 8 языках."}},
+  {"@type":"Question","name":"Работает на телефоне?","acceptedAnswer":{"@type":"Answer","text":"Да. Нажмите «Снять камерой» — откроется камера. Сайт работает в любом современном браузере, установка не нужна."}}
+  ]}
+  </script>
+
+  <section id="free-tool" aria-labelledby="free-tool-title">
+    <div class="wrap">
+      <div class="head reveal">
+        <h2 id="free-tool-title" data-i18n="freetool.title">Попробуйте прямо сейчас — бесплатно, в браузере</h2>
+        <p class="hint" data-i18n="freetool.sub">Без регистрации и без Pro: фото распознаётся на вашем устройстве.</p>
+      </div>
+      <div class="glass converter reveal" style="max-width:640px;margin:0 auto;grid-template-columns:1fr">
+        <div class="pane">
+          <div class="drop" id="ft-drop" tabindex="0" role="button" data-i18n-attr="aria-label:app.drop">
+            <span class="scanline"></span>
+            <div class="big" aria-hidden="true">⬆</div>
+            <b data-i18n="app.drop">Перетащите фото или нажмите</b>
+            <small data-i18n="app.drop_hint">JPG, PNG, WEBP · можно несколько · вставка из буфера Ctrl+V</small>
+          </div>
+          <input type="file" id="ft-file" accept="image/*" multiple hidden>
+          <div class="row">
+            <div class="grow">
+              <label class="lbl" for="ft-lang" data-i18n="app.lang">Язык текста</label>
+              <select id="ft-lang" class="field"></select>
+            </div>
+          </div>
+          <div class="row">
+            <button class="btn primary" type="button" id="ft-go" disabled>✦ <span data-i18n="app.go">Распознать</span></button>
+            <button class="btn ghost small" type="button" id="ft-clear" data-i18n="app.clear">Очистить</button>
+          </div>
+          <div class="progress" aria-hidden="true"><i id="ft-bar"></i></div>
+          <div class="status" id="ft-status" role="status" aria-live="polite"></div>
+          <label class="sr" for="ft-editor" data-i18n="app.result">Результат</label>
+          <textarea class="editor" id="ft-editor" spellcheck="false" data-i18n-attr="placeholder:app.placeholder"></textarea>
+          <div class="row" style="justify-content:space-between">
+            <button class="linkbtn" type="button" id="ft-copy" data-i18n="app.copy">Копировать</button>
+            <button class="btn small" type="button" id="ft-txt" data-i18n="freetool.txt">Скачать TXT</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="brand/mark.svg" alt="" style="width:28px;height:28px"><span style="font-size:18px">KaTiAi</span></a>
+    <span data-i18n="footer.tagline">Видит текст даже в темноте</span>
+    <div class="spacer"></div>
+    <a class="btn small social max" href="https://max.ru/se14025453_biz" target="_blank" rel="noopener" data-i18n="footer.max">Подписаться в MAX →</a>
+    <a class="btn small social tg" href="https://t.me/Ka_Ti_Ai" target="_blank" rel="noopener" data-i18n="footer.tg">Подписаться в Telegram →</a>
+    <a href="privacy.html" data-i18n="footer.privacy">Конфиденциальность</a>
+    <a href="offer.html" data-i18n="footer.offer">Оферта</a>
+    <a href="about.html" data-i18n="footer.about">О нас</a>
+    <span>© KaTiAi</span>
+  </div>
+</footer>
+
+<dialog id="login-dlg" aria-labelledby="login-title">
+  <form method="dialog" class="in">
+    <button class="icon-btn close" value="cancel" type="submit" aria-label="×">×</button>
+    <h3 id="login-title" data-i18n="login.title">Вход без пароля</h3>
+    <p class="muted" style="margin:0" data-i18n="login.sub">Пришлём ссылку для входа на почту.</p>
+    <label class="lbl" for="login-email" data-i18n="login.email">Ваш e-mail</label>
+    <input class="field" id="login-email" type="email" autocomplete="email" required>
+    <button class="btn primary" type="button" id="login-send" data-i18n="login.send">Получить ссылку</button>
+    <p class="status" id="login-status" role="status"></p>
+  </form>
+</dialog>
+
+<dialog id="account-dlg" aria-labelledby="acc-title">
+  <form method="dialog" class="in">
+    <button class="icon-btn close" value="cancel" type="submit" aria-label="×">×</button>
+    <h3 id="acc-title" data-i18n="account.title">Аккаунт</h3>
+    <p style="margin:0" id="acc-email"></p>
+    <div class="card">
+      <div class="meter"><span data-i18n="account.plan">Тариф</span><b id="acc-plan">Free</b></div>
+      <div class="meter"><span data-i18n="account.balance">Баланс платного режима</span><b id="acc-balance">0 ₽</b></div>
+      <div class="meter" id="acc-until-row" hidden><span data-i18n="account.until">Активен до</span><b id="acc-until"></b></div>
+      <p class="hint" id="acc-renew"></p>
+    </div>
+    <p class="hint" data-i18n="app.plan_free_note">Бесплатно: до 3 страниц в день в браузере, 100+ языков, экспорт в DOCX, PDF, Р7, TXT и фото — без регистрации и водяных знаков.</p>
+    <p class="hint" data-i18n="app.plan_pro_note">Pro: без дневного лимита — рукопись, таблицы, перевод на 30+ языков, PDF с поиском по тексту и отправка на почту.</p>
+    <div class="row">
+      <input class="field topup-amount" id="topup-amount" type="number" min="10" step="1" inputmode="numeric" placeholder="₽" data-i18n-attr="aria-label:account.topup_amount_label">
+      <button class="btn" type="button" id="topup-btn" data-i18n="account.topup_cta">Пополнить +10%</button>
+    </div>
+    <p class="hint" data-i18n="account.topup_hint">Зачислим сумму с бонусом +10% на баланс платного режима.</p>
+    <p class="status" id="topup-status" role="status"></p>
+    <button class="btn primary" type="button" id="acc-upgrade" data-i18n="account.upgrade">Перейти на Pro</button>
+    <button class="btn" type="button" id="acc-cancel" hidden data-i18n="account.cancel">Отключить автопродление</button>
+    <button class="btn ghost" type="button" id="acc-logout" data-i18n="account.logout">Выйти</button>
+  </form>
+</dialog>
+
+<dialog id="buy-dlg" aria-labelledby="buy-title">
+  <form method="dialog" class="in">
+    <button class="icon-btn close" value="cancel" type="submit" aria-label="×">×</button>
+    <h3 id="buy-title" data-i18n="checkout.title">Оформление Pro</h3>
+    <p class="hint" data-i18n="checkout.tier_hint">Выберите тариф — от него зависит дневной кредит на платный режим.</p>
+    <div class="tier-select" id="tier-select"></div>
+    <label class="check"><input type="checkbox" id="consent"><span id="consent-text"></span></label>
+    <button class="btn primary" type="button" id="pay-yk" data-i18n="checkout.yk">Оплатить картой РФ или СБП (ЮKassa)</button>
+    <button class="btn" type="button" id="pay-stripe" data-i18n="checkout.stripe">Оплатить картой (Stripe)</button>
+    <p class="status" id="buy-status" role="status"></p>
+  </form>
+</dialog>
+
+<dialog id="exit-dlg" aria-labelledby="exit-title">
+  <form method="dialog" class="in">
+    <button class="icon-btn close" value="cancel" type="submit" aria-label="×">×</button>
+    <h3 id="exit-title" data-i18n="exit.title">Не уходите без подарка</h3>
+    <p class="hint" data-i18n="exit.text">Подпишитесь на канал — участвуйте в розыгрыше бесплатного месяца Pro</p>
+    <a class="btn primary social max" href="https://max.ru/se14025453_biz" target="_blank" rel="noopener" data-i18n="exit.max">Подписаться в MAX</a>
+    <a class="btn social tg" href="https://t.me/Ka_Ti_Ai" target="_blank" rel="noopener" data-i18n="exit.tg">Подписаться в Telegram</a>
+    <button class="btn ghost small" type="button" id="exit-skip" data-i18n="exit.skip">Не сейчас</button>
+  </form>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js" defer></script>
+<script async src="https://docs.opencv.org/4.9.0/opencv.js"></script>
+<script src="js/i18n.js?v=20261019" defer></script>
+<script src="js/mdhtml.js?v=20261022" defer></script>
+<script src="js/autocrop.js?v=20261022" defer></script>
+<script src="js/app.js?v=20261019" defer></script>
+<script src="js/free-tool.js?v=20261027" defer></script>
+<script type="module" src="js/scene.js"></script>
+</body>
+</html>

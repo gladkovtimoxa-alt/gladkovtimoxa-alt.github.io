@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Фото таблицы → Excel — KaTiAi</title>
+<style>
+:root{--bg:#0B0A12;--fg:#F2F0FA;--muted:#A3A3B5;--accent:#3DF5C8}
+html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;font-family:Onest,system-ui,'Segoe UI',sans-serif;color:var(--fg)}
+#c{display:block;width:100%;height:100%}
+.ui{position:fixed;inset:0;pointer-events:none;user-select:none}
+.brand{position:absolute;top:22px;left:28px;font-size:20px;font-weight:800;letter-spacing:.2px}
+.brand i{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent);margin-right:9px;box-shadow:0 0 12px var(--accent)}
+.headline{position:absolute;left:0;right:0;bottom:52px;text-align:center}
+.headline h1{margin:0;font-size:clamp(26px,4.6vw,52px);font-weight:800}
+.headline h1 b{color:var(--accent);font-weight:800}
+.headline p{margin:8px 0 0;color:var(--muted);font-size:clamp(13px,1.7vw,17px)}
+.cta{position:absolute;right:28px;bottom:22px;font-size:13px;color:var(--muted)}
+.cta b{color:var(--fg)}
+#fade{position:fixed;inset:0;background:var(--bg);pointer-events:none;opacity:1}
+body.portrait .brand{top:18px;left:16px;font-size:16px}
+body.portrait .headline{top:50%;bottom:auto;transform:translateY(-50%);left:12px;right:12px}
+body.portrait .headline h1{font-size:clamp(20px,5.4vw,30px)}
+body.portrait .headline p{display:none}
+body.portrait .cta{top:20px;bottom:auto;right:16px;font-size:11px}
+.nogl{position:fixed;inset:0;display:none;place-items:center;text-align:center;padding:40px;color:var(--muted)}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="ui">
+  <div class="brand"><i></i>KaTiAi</div>
+  <div class="headline">
+    <h1>Фото таблицы <b>→</b> Excel</h1>
+    <p>Pro-режим распознаёт строки и столбцы, а не только текст — CSV у каждой таблицы · 2&nbsp;₽/стр · бесплатный режим в браузере</p>
+  </div>
+  <div class="cta"><b>katiai.ru</b> — распознавание документов</div>
+</div>
+<div id="fade"></div>
+<div class="nogl" id="nogl"><div><b>WebGL недоступен.</b><br>Откройте эту страницу в актуальном браузере (Chrome, Edge, Firefox).</div></div>
+<script src="three.min.js"></script>
+<script>
+"use strict";
+/* ───────────────────────── KaTiAi · 3D-анимация «Фото таблицы → Excel» ─────────────────────────
+   Детерминированная сцена: каждая позиция — функция t ∈ [0,1) (цикл ~14 с), поэтому зацикливание
+   бесшовное. Фазы: появление фото → сетка-распознавание + сканер → ячейки вылетают → Excel
+   собирается (шапка, номера строк, строка формул, CSV) → удержание → зацикливание. */
+(function(){
+/* QA: баннеры ошибок/успеха прямо на кадре */
+window.addEventListener("error", e => { const d=document.createElement("div"); d.style.cssText="position:fixed;top:0;left:0;right:0;background:red;color:#fff;font:16px monospace;z-index:99;padding:8px"; d.textContent="ERR: "+(e.message||e.error)+" @line "+e.lineno; (document.body||document.documentElement).appendChild(d); });
+const DURATION = 14;                                   // секунд на цикл
+const QA_T = new URLSearchParams(location.search).get("t");
+const QA_FREEZE = QA_T !== null && !isNaN(+QA_T);
+const ACCENT = 0x3DF5C8, GREEN = 0x22C55E, BG = 0x0B0A12;
+const ROWS = [
+  ["1","Футболка","2","1 400 ₽"],
+  ["2","Шорты","1","2 300 ₽"],
+  ["3","Рюкзак","1","4 500 ₽"],
+  ["4","Сумка","1","2 400 ₽"],
+];
+const NCOLS = 4, NROWS = ROWS.length;
+const HEADERS = ["№","Позиция","Кол-во","Сумма"];
+const LETTERS = ["A","B","C","D"];
+const TOTAL = "12 600 ₽";
+
+const cv = document.getElementById("c");
+const portrait0 = (window.innerWidth/Math.max(1,window.innerHeight)) < 0.8;
+let renderer;
+try{ renderer = new THREE.WebGLRenderer({canvas:cv, antialias:!portrait0, alpha:false, powerPreference:"high-performance", preserveDrawingBuffer:QA_FREEZE}); }
+catch(e){ document.getElementById("nogl").style.display="grid"; return; }
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, portrait0 ? 1.5 : 2));
+renderer.setClearColor(BG, 1);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(BG, 14, 26);
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const key = new THREE.DirectionalLight(0xffffff, 0.9); key.position.set(3,6,8); scene.add(key);
+const rim = new THREE.DirectionalLight(0x8899ff, 0.25); rim.position.set(-4,2,-6); scene.add(rim);
+const photoLight = new THREE.PointLight(ACCENT, 0.0, 12); photoLight.position.set(-6,1,4); scene.add(photoLight);
+const excelLight = new THREE.PointLight(GREEN, 0.0, 12); excelLight.position.set(6,1,4); scene.add(excelLight);
+
+const root = new THREE.Group(); scene.add(root);
+
+/* ── адаптивная раскладка: десктоп (рядом) / портретный телефон (колонка) ──
+   Мобильные оптимизации: dpr≤1.5, MSAA off в портрете, PPS меньше, пауза в фоновой
+   вкладке. Раскладка пересчитывается при повороте экрана (resize). */
+function layoutFor(w,h){
+  const a = w/Math.max(1,h);
+  if(a < 0.8)
+    return { portrait:true,  photoPos:[0, 4.9, 0],   photoScale:0.80, excelPos:[0, -4.6, 0], excelScale:0.58 };
+  return   { portrait:false, photoPos:[-6.2, 0.1, 0], photoScale:1,   excelPos:[6, 0, 0],    excelScale:1 };
+}
+const TANF = Math.tan(42*Math.PI/360);
+function fitDistance(L){
+  const a = window.innerWidth/Math.max(1,window.innerHeight);
+  if(L.portrait) return Math.max(15, (6.65+0.8)/TANF, (3.1+0.8)/(TANF*a));
+  return Math.max(14, (3.75+0.8)/TANF, (9.25+0.5)/(TANF*a));
+}
+function applyLayout(L){
+  L.camD = fitDistance(L);
+  photo.position.set(L.photoPos[0], L.photoPos[1], L.photoPos[2]);
+  photo.scale.setScalar(L.photoScale);
+  excel.position.set(L.excelPos[0], L.excelPos[1], L.excelPos[2]);
+  excel.scale.setScalar(L.excelScale);
+  document.body.classList.toggle("portrait", L.portrait);
+  scene.fog.near = L.camD*0.85; scene.fog.far = L.camD*2.2;
+  /* слайбы — дети группы excel: их кривые в ЛОКАЛЬНЫХ координатах группы;
+     мировая копия (curveW) нужна частицам (они в мировом пространстве). */
+  const EP = new THREE.Vector3(L.excelPos[0], L.excelPos[1], L.excelPos[2]);
+  const S = L.excelScale;
+  const toLocal = v => new THREE.Vector3((v.x-EP.x)/S, (v.y-EP.y)/S, (v.z-EP.z)/S);
+  for(const s of slabs){
+    const i=s.userData.ci, j=s.userData.cj;
+    const start = new THREE.Vector3(L.photoPos[0]+colX(i)*L.photoScale, L.photoPos[1]+rowY(j)*L.photoScale, 0.08);
+    const ep = cellPos(i,j);
+    const end = EP.clone().add(new THREE.Vector3(ep.x*S, ep.y*S, 0));
+    const c1 = L.portrait ? start.clone().add(new THREE.Vector3(0.8,-1.1,1.5)) : start.clone().add(new THREE.Vector3(1.6,2.3,1.9));
+    const c2 = L.portrait ? end.clone().add(new THREE.Vector3(-0.8,1.1,1.5)) : end.clone().add(new THREE.Vector3(1.4,2.1,1.4));
+    s.userData.curveW = new THREE.CubicBezierCurve3(start, c1, c2, end);
+    s.userData.curve.v0.copy(toLocal(start)); s.userData.curve.v1.copy(toLocal(c1));
+    s.userData.curve.v2.copy(toLocal(c2));   s.userData.curve.v3.copy(toLocal(end));
+  }
+}
+let L = layoutFor(window.innerWidth, window.innerHeight);
+/* отладочный/инспекционный доступ (CDP-тесты, QA) */
+Object.defineProperties(window, {
+  L:        { get(){ return L; },        configurable:true },
+  photo:    { get(){ return photo; },    configurable:true },
+  excel:    { get(){ return excel; },    configurable:true },
+  slabs:    { get(){ return slabs; },    configurable:true },
+  scene:    { get(){ return scene; },    configurable:true },
+  camera:   { get(){ return camera; },   configurable:true },
+  renderer: { get(){ return renderer; }, configurable:true },
+});
+
+/* ── helpers ─────────────────────────────────────────────────────────────── */
+const ph = (t,a,b)=>Math.min(1,Math.max(0,(t-a)/(b-a)));
+const easeIO = p=>p<0.5 ? 4*p*p*p : 1-Math.pow(-2*p+2,3)/2;
+const easeOut = p=>1-Math.pow(1-p,3);
+const clamp01 = p=>Math.min(1,Math.max(0,p));
+
+function canvasTex(w,h,draw){
+  const c = document.createElement("canvas"); c.width=w; c.height=h;
+  draw(c.getContext("2d"),w,h);
+  const t = new THREE.CanvasTexture(c);
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  t.minFilter = THREE.LinearMipmapLinearFilter;
+  return t;
+}
+function rr(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+function fitFont(ctx,text,maxW,base,fam){
+  let s=base;
+  do{ ctx.font=`700 ${s}px ${fam}`; if(ctx.measureText(text).width<=maxW) break; s-=2; }while(s>10);
+}
+function glowTex(color){
+  return canvasTex(256,256,(ctx,w,h)=>{
+    const g=ctx.createRadialGradient(w/2,h/2,10,w/2,h/2,w/2);
+    g.addColorStop(0, color+"55"); g.addColorStop(0.55, color+"18"); g.addColorStop(1, color+"00");
+    ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+  });
+}
+
+/* ── фото-карточка (слева) ─────────────────────────────────────────────────
+   Карточка 4.4×5.6, canvas 512×656. Таблица на фото (px): x 88..424, y 150..470;
+   шапка 48px, строки по 68px, колонки по 84px. Масштаб px→local: S=4.4/512. */
+const S = 4.4/512;
+const photo = new THREE.Group(); photo.position.set(-6.2, 0.1, 0); root.add(photo);
+
+const photoTex = canvasTex(512,656,(ctx,w,h)=>{
+  // «стол» на фото
+  const bg=ctx.createLinearGradient(0,0,0,h);
+  bg.addColorStop(0,"#43485a"); bg.addColorStop(1,"#23262f");
+  ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
+  ctx.save(); ctx.globalAlpha=.5;                                   // размытые пятна на столе
+  ctx.fillStyle="#5a6478"; ctx.beginPath(); ctx.ellipse(430,120,90,60,0.4,0,7); ctx.fill();
+  ctx.fillStyle="#3d4b52"; ctx.beginPath(); ctx.ellipse(70,600,110,70,-0.3,0,7); ctx.fill();
+  ctx.restore();
+  ctx.save();                                                       // кофе справа сверху
+  ctx.globalAlpha=.95;
+  ctx.fillStyle="#1c1f26"; ctx.beginPath(); ctx.arc(452,132,44,0,7); ctx.fill();
+  ctx.strokeStyle="#14161c"; ctx.lineWidth=10; ctx.beginPath(); ctx.arc(452,132,44,0,7); ctx.stroke();
+  ctx.fillStyle="#3b2a20"; ctx.beginPath(); ctx.arc(452,132,34,0,7); ctx.fill();
+  ctx.restore();
+  // лист с таблицей (слегка повёрнут)
+  ctx.save(); ctx.translate(w/2,330); ctx.rotate(0.018);
+  ctx.shadowColor="rgba(0,0,0,.5)"; ctx.shadowBlur=26; ctx.shadowOffsetY=10;
+  ctx.fillStyle="#f7f8fa"; rr(ctx,-198,-222,396,444,10); ctx.fill();
+  ctx.shadowColor="transparent";
+  const tx=-168, ty=-180, tw=336, th=320, headH=48, rowH=68, colW=84; // локальные (центр листа)
+  ctx.strokeStyle="#2f3542"; ctx.lineWidth=3;
+  ctx.strokeRect(tx,ty,tw,th);
+  ctx.lineWidth=1.6;
+  for(let i=1;i<=NCOLS;i++){ const x=tx+i*colW; ctx.beginPath(); ctx.moveTo(x,ty); ctx.lineTo(x,ty+th); ctx.stroke(); }
+  for(let j=1;j<=NROWS;j++){ const y=ty+headH+j*rowH; ctx.beginPath(); ctx.moveTo(tx,y); ctx.lineTo(tx+tw,y); ctx.stroke(); }
+  ctx.beginPath(); ctx.moveTo(tx,ty+headH); ctx.lineTo(tx+tw,ty+headH); ctx.lineWidth=3; ctx.stroke();
+  ctx.fillStyle="#1d2430"; ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.font="700 19px system-ui";
+  for(let i=0;i<NCOLS;i++) ctx.fillText(HEADERS[i], tx+(i+0.5)*colW, ty+headH/2);
+  ctx.font="500 17px system-ui";
+  for(let j=0;j<NROWS;j++) for(let i=0;i<NCOLS;i++)
+    ctx.fillText(ROWS[j][i], tx+(i+0.5)*colW, ty+headH+(j+0.5)*rowH);
+  ctx.restore();
+  // «фотофон» поверх краёв + виньетка + зерно
+  ctx.save();
+  const v=ctx.createRadialGradient(w/2,h/2,h*0.32,w/2,h/2,h*0.72);
+  v.addColorStop(0,"rgba(0,0,0,0)"); v.addColorStop(1,"rgba(0,0,0,.55)");
+  ctx.fillStyle=v; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha=.06;
+  for(let n=0;n<1400;n++){ ctx.fillStyle=Math.random()<.5?"#fff":"#000"; ctx.fillRect(Math.random()*w,Math.random()*h,1.4,1.4); }
+  ctx.restore();
+  ctx.fillStyle="rgba(255,255,255,.75)"; ctx.font="600 15px system-ui";
+  ctx.textAlign="right"; ctx.fillText("12:47", w-22, h-20);          // штамп времени, как на телефоне
+  // белая «печатная» рамка
+  ctx.strokeStyle="#ffffff"; ctx.lineWidth=10; rr(ctx,8,8,w-16,h-16,22); ctx.stroke();
+});
+const photoCard = new THREE.Mesh(
+  new THREE.PlaneGeometry(4.4,5.6),
+  new THREE.MeshStandardMaterial({map:photoTex, transparent:true, roughness:.85, metalness:0, side:THREE.DoubleSide})
+);
+photo.add(photoCard);
+const photoGlow = new THREE.Mesh(
+  new THREE.PlaneGeometry(9,11),
+  new THREE.MeshBasicMaterial({map:glowTex("#3DF5C8"), transparent:true, opacity:0, depthWrite:false})
+);
+photoGlow.position.z=-0.6; photo.add(photoGlow);
+
+// координаты таблицы в локальных координатах карточки
+const T = { x0:-1.44, x1:1.44, yTop:-1.53, yBot:1.22, headFrac:48/320 };
+const colX = i => T.x0 + (i+0.5)*(T.x1-T.x0)/NCOLS;
+const rowY = j => T.yTop + (T.headFrac + (j+0.5)*(1-T.headFrac)) * (T.yBot-T.yTop);
+
+// сетка распознавания (линии) + подсветка ячеек + сканер — дети фото
+const gridGroup = new THREE.Group(); gridGroup.position.z=0.03; photo.add(gridGroup);
+function line3(a,b,color){
+  const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a), new THREE.Vector3(...b)]);
+  const l = new THREE.Line(g, new THREE.LineBasicMaterial({color, transparent:true, opacity:0, linewidth:2}));
+  l.scale.set(0.001,0.001,0.001); gridGroup.add(l); return l;
+}
+const gridLines = [];
+for(let i=0;i<=NCOLS;i++){ const x=T.x0+i*(T.x1-T.x0)/NCOLS; gridLines.push(line3([x,T.yTop,0],[x,T.yBot,0],ACCENT)); }
+for(let j=0;j<=NROWS;j++){ const y=T.yTop+j*(1-T.headFrac)*(T.yBot-T.yTop)/NROWS; gridLines.push(line3([T.x0,y,0],[T.x1,y,0],ACCENT)); }
+
+const cellLights = [];
+for(let j=0;j<NROWS;j++) for(let i=0;i<NCOLS;i++){
+  const m = new THREE.Mesh(
+    new THREE.PlaneGeometry((T.x1-T.x0)/NCOLS*0.9, (T.yBot-T.yTop)*(1-T.headFrac)/NROWS*0.85),
+    new THREE.MeshBasicMaterial({color:ACCENT, transparent:true, opacity:0, depthWrite:false})
+  );
+  m.position.set(colX(i), rowY(j), 0.005);
+  photo.add(m); cellLights.push(m);
+}
+const scanner = new THREE.Mesh(
+  new THREE.BoxGeometry(T.x1-T.x0, 0.055, 0.02),
+  new THREE.MeshBasicMaterial({color:ACCENT, transparent:true, opacity:0})
+);
+scanner.position.z=0.05; photo.add(scanner);
+
+/* ── Excel (справа) ──────────────────────────────────────────────────────── */
+const excel = new THREE.Group(); excel.position.set(6.0, 0.0, 0); root.add(excel);
+const CW=1.06, CH=0.68;                                    // шаг ячеек
+const cellPos = (i,j) => new THREE.Vector3((i-(NCOLS-1)/2)*CW, ((NROWS-1)/2-j)*CH, 0);
+
+const excelGlow = new THREE.Mesh(
+  new THREE.PlaneGeometry(10,8),
+  new THREE.MeshBasicMaterial({map:glowTex("#22C55E"), transparent:true, opacity:0, depthWrite:false})
+);
+excelGlow.position.z=-0.7; excel.add(excelGlow);
+
+// фон-«лист» Excel
+const sheet = new THREE.Mesh(
+  new THREE.PlaneGeometry(NCOLS*CW+0.9, NROWS*CH+1.6),
+  new THREE.MeshStandardMaterial({color:0x141b26, transparent:true, opacity:0, roughness:.9})
+);
+sheet.position.set(0.3,0,-0.25); excel.add(sheet);
+
+// шапка столбцов (зелёная, A–D)
+function textTex(w,h,bg,fg,draw){ return canvasTex(w,h,(c,x,y)=>{ c.fillStyle=bg; c.fillRect(0,0,w,h); c.fillStyle=fg; draw(c); }); }
+const headTex = canvasTex(1024,128,(ctx,w,h)=>{
+  ctx.fillStyle="#16A34A"; ctx.fillRect(0,0,w,h);
+  ctx.fillStyle="#ffffff"; ctx.textAlign="center"; ctx.textBaseline="middle";
+  for(let i=0;i<NCOLS;i++){ ctx.font="800 54px system-ui"; ctx.fillText(LETTERS[i], (i+0.5)*w/NCOLS, h/2+2); }
+});
+const headStrip = new THREE.Mesh(
+  new THREE.BoxGeometry(NCOLS*CW+0.24, 0.52, 0.16),
+  [new THREE.MeshStandardMaterial({color:0x14532d}),new THREE.MeshStandardMaterial({color:0x14532d}),
+   new THREE.MeshBasicMaterial({map:headTex}),
+   new THREE.MeshStandardMaterial({color:0x14532d}),
+   new THREE.MeshBasicMaterial({map:headTex}),
+   new THREE.MeshStandardMaterial({color:0x14532d})]
+);
+headStrip.position.set(0,(NROWS-1)/2*CH+0.52,-0.05); excel.add(headStrip);
+
+// номера строк
+const rowNumTex = canvasTex(128,512,(ctx,w,h)=>{
+  ctx.fillStyle="#1f2937"; ctx.fillRect(0,0,w,h);
+  ctx.fillStyle="#e5e7eb"; ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.font="700 40px system-ui";
+  for(let j=0;j<NROWS;j++) ctx.fillText(String(j+1), w/2, (j+0.5)*h/NROWS);
+});
+const rowNums = new THREE.Mesh(
+  new THREE.BoxGeometry(0.42, NROWS*CH+0.24, 0.14),
+  [new THREE.MeshStandardMaterial({color:0x111827}),new THREE.MeshStandardMaterial({color:0x111827}),
+   new THREE.MeshStandardMaterial({color:0x1f2937}),
+   new THREE.MeshStandardMaterial({color:0x111827}),
+   new THREE.MeshBasicMaterial({map:rowNumTex}),
+   new THREE.MeshStandardMaterial({color:0x111827})]
+);
+rowNums.position.set(-(NCOLS-1)/2*CW-CW/2-0.3, 0, -0.05); excel.add(rowNums);
+
+// строка формул
+const fxTex = canvasTex(1024,96,(ctx,w,h)=>{
+  ctx.fillStyle="#0f172a"; ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle="#334155"; ctx.lineWidth=2; ctx.strokeRect(1,1,w-2,h-2);
+  ctx.fillStyle="#3DF5C8"; ctx.font="italic 700 40px Georgia"; ctx.textBaseline="middle"; ctx.textAlign="left";
+  ctx.fillText("fx", 26, h/2);
+  ctx.fillStyle="#F2F0FA"; ctx.font="600 42px system-ui";
+  ctx.fillText("Сумма:  " + TOTAL, 110, h/2);
+  ctx.fillStyle="#3DF5C8"; ctx.font="700 30px system-ui"; ctx.textAlign="right";
+  ctx.fillText("✔ Excel", w-26, h/2);
+});
+const fxBar = new THREE.Mesh(
+  new THREE.BoxGeometry(NCOLS*CW+1.0, 0.44, 0.12),
+  [0,1,2,3,4,5].map(()=>new THREE.MeshBasicMaterial({map:fxTex}))
+);
+fxBar.position.set(0.15,(NROWS-1)/2*CH+1.35,-0.1); excel.add(fxBar);
+
+// CSV-чип
+const chipTex = canvasTex(256,256,(ctx,w,h)=>{
+  ctx.fillStyle="#ffffff"; rr(ctx,8,8,w-16,h-16,26); ctx.fill();
+  ctx.strokeStyle="#d1d5db"; ctx.lineWidth=4; rr(ctx,8,8,w-16,h-16,26); ctx.stroke();
+  ctx.fillStyle="#16A34A"; ctx.font="800 120px system-ui"; ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.fillText("X", w/2, h/2-18);
+  ctx.fillStyle="#374151"; ctx.font="700 34px system-ui";
+  ctx.fillText("CSV", w/2, h/2+72);
+});
+const chip = new THREE.Mesh(
+  new THREE.BoxGeometry(0.92,0.92,0.14),
+  [0,1,2,3,4,5].map(()=>new THREE.MeshStandardMaterial({map:chipTex, roughness:.6}))
+);
+chip.position.set((NCOLS-1)/2*CW+CW/2+0.75, -((NROWS-1)/2)*CH-0.35, 0.1); excel.add(chip);
+
+/* ── ячейки-«пластины» (вылетают из фото и складываются в Excel) ─────────── */
+const slabs = [];
+for(let j=0;j<NROWS;j++) for(let i=0;i<NCOLS;i++){
+  const value = ROWS[j][i];
+  const tex = canvasTex(256,160,(ctx,w,h)=>{
+    ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle="#9ca3af"; ctx.lineWidth=3; ctx.strokeRect(1.5,1.5,w-3,h-3);
+    ctx.fillStyle="#111827"; ctx.textAlign="center"; ctx.textBaseline="middle";
+    fitFont(ctx, value, w-24, 52, "system-ui");
+    ctx.fillText(value, w/2, h/2+2);
+  });
+  const side = new THREE.MeshStandardMaterial({color:0xe5e7eb, roughness:.55});
+  const front = new THREE.MeshBasicMaterial({map:tex});
+  const slab = new THREE.Mesh(
+    new THREE.BoxGeometry(CW*0.9, CH*0.86, 0.14),
+    [side,side,side,side,front,side]
+  );
+  const start = new THREE.Vector3(-6.2 + colX(i), 0.1 + rowY(j), 0.08);   // мир: позиция ячейки на фото
+  const end   = cellPos(i,j);
+  const c1 = start.clone().add(new THREE.Vector3(1.6, 2.3, 1.9));
+  const c2 = end.clone().add(new THREE.Vector3(1.4, 2.1, 1.4));
+  slab.userData = {
+    curve: new THREE.CubicBezierCurve3(start, c1, c2, end),
+    t0: 0.50 + (j*NCOLS+i)*0.009,
+    dur: 0.17,
+    ci: i, cj: j
+  };
+  slab.visible = false;
+  excel.add(slab); slabs.push(slab);
+}
+
+/* ── частицы-поток по тем же кривым ──────────────────────────────────────── */
+const PPS = 14;
+const pGeo = new THREE.BufferGeometry();
+const pPos = new Float32Array(slabs.length*PPS*3);
+const pMeta = slabs.flatMap(s => Array.from({length:PPS}, (_,k)=>({s, u0:k/PPS, sp:0.5+((s.userData.t0*137+k*29)%10)/18})));
+pGeo.setAttribute("position", new THREE.BufferAttribute(pPos,3));
+const pMat = new THREE.PointsMaterial({color:ACCENT, size:0.055, transparent:true, opacity:0,
+  blending:THREE.AdditiveBlending, depthWrite:false, sizeAttenuation:true});
+const points = new THREE.Points(pGeo, pMat); root.add(points);
+
+applyLayout(L);
+
+/* ── фазы ────────────────────────────────────────────────────────────────── */
+const F = {
+  photoIn:   [0.00, 0.14],   // карточка влетает
+  gridDraw:  [0.22, 0.42],   // линии сетки
+  scan:      [0.24, 0.44],   // сканер
+  cells:     [0.30, 0.46],   // подсветка ячеек
+  flight:    [0.50, 0.76],   // вылет пластинок
+  excelIn:   [0.66, 0.86],   // Excel-хром
+  hold:      [0.86, 1.00],   // удержание
+};
+
+const clock = new THREE.Clock();
+let elapsed = 0;
+
+function resize(){
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w,h);
+  camera.aspect = w/h; camera.updateProjectionMatrix();
+  L = layoutFor(w,h); applyLayout(L);
+}
+window.addEventListener("resize", resize); resize();
+
+/* dev-hook: детерминированный рендер кадра для QA/скриншотов */
+window.__renderAt = function(tFrac){
+  elapsed = Math.max(0, Math.min(0.999, tFrac)) * DURATION;
+  clock.getDelta();
+  tick();
+};
+
+function tick(){
+  elapsed += Math.min(clock.getDelta(), 0.05);
+  const t = (elapsed % DURATION) / DURATION;
+
+  /* фото: влёт + лёгкое парение */
+  const pin = easeOut(ph(t, ...F.photoIn));
+  if(L.portrait){
+    photo.position.set(Math.sin(t*Math.PI*2)*0.05, L.photoPos[1]+(1-pin)*1.6, 0);
+  } else {
+    photo.position.x = -6.2 + (1-pin)*2.2;
+    photo.position.y = 0.1 + Math.sin(t*Math.PI*2)*0.06;
+  }
+  photo.rotation.y = (1-pin)*-0.5 + Math.sin(t*Math.PI*2)*0.045;
+  photo.rotation.z = (1-pin)*0.12;
+  photoGlow.material.opacity = 0.5*pin*(0.6+0.4*Math.sin(t*Math.PI*4));
+  photoLight.intensity = 1.6*pin;
+
+  /* сетка-распознавание */
+  const gStart=F.gridDraw[0], gSpan=F.gridDraw[1]-F.gridDraw[0];
+  gridLines.forEach((l,k)=>{
+    const g = easeOut(ph(t, gStart+k*0.014, gStart+gSpan*0.6+k*0.014));
+    l.scale.setScalar(0.001+0.999*g);
+    l.material.opacity = 0.95*Math.sin(Math.min(1,ph(t,gStart+k*0.014,gStart+k*0.014+0.05))*Math.PI/2);
+  });
+  const sc = ph(t, ...F.scan);
+  scanner.visible = sc>0 && sc<1;
+  if(scanner.visible){
+    scanner.position.y = T.yTop + sc*(T.yBot-T.yTop);
+    scanner.material.opacity = Math.sin(sc*Math.PI)*0.95;
+  }
+  cellLights.forEach((m,k)=>{
+    const c = ph(t, F.cells[0]+k*0.008, F.cells[1]);
+    m.material.opacity = 0.75*Math.sin(c*Math.PI);
+    m.visible = m.material.opacity>0.01;
+  });
+
+  /* вылет пластинок */
+  slabs.forEach(s=>{
+    const u = s.userData;
+    const p = easeIO(ph(t, u.t0, u.t0+u.dur));
+    s.visible = p>0;
+    if(s.visible){
+      s.position.copy(u.curve.getPoint(p));
+      s.rotation.y = (1-p)*0.9;
+      s.rotation.x = (1-p)*0.25*Math.sin(p*Math.PI);
+      const sc2 = 0.55+0.45*easeOut(Math.min(1,p*3));
+      s.scale.setScalar(sc2);
+    }
+  });
+
+  /* частицы */
+  const fp = ph(t, F.flight[0], F.flight[1]);
+  pMat.opacity = 0.85*Math.sin(clamp01(fp)*Math.PI);
+  if(pMat.opacity>0.01){
+    let k=0;
+    for(const m of pMeta){
+      const u = (m.u0 + t*m.sp*2.2) % 1;
+      const v = m.s.userData.curveW.getPoint(u);
+      pPos[k++]=v.x; pPos[k++]=v.y; pPos[k++]=v.z;
+    }
+    pGeo.attributes.position.needsUpdate = true;
+  }
+
+  /* Excel-хром */
+  const xi0=F.excelIn[0];
+  const sheetIn = easeOut(ph(t, xi0, xi0+0.10));
+  sheet.material.opacity = 0.95*sheetIn;
+  sheet.position.y = (1-sheetIn)*0.5;
+  const headIn = easeOut(ph(t, xi0+0.05, xi0+0.16));
+  headStrip.visible = headIn>0;
+  headStrip.position.y = (NROWS-1)/2*CH+0.52+(1-headIn)*0.5;
+  headStrip.scale.setScalar(0.6+0.4*headIn);
+  const rowIn = easeOut(ph(t, xi0+0.09, xi0+0.20));
+  rowNums.visible = rowIn>0;
+  rowNums.position.x = (-(NCOLS-1)/2*CW-CW/2-0.3) + (1-rowIn)*(-0.5);
+  const fxIn = easeOut(ph(t, xi0+0.16, xi0+0.30));
+  fxBar.visible = fxIn>0;
+  fxBar.position.y = (NROWS-1)/2*CH+1.35+(1-fxIn)*0.6;
+  fxBar.scale.set(0.7+0.3*fxIn, 1, 1);
+  const chipIn = easeOut(ph(t, xi0+0.24, xi0+0.38));
+  chip.visible = chipIn>0;
+  const cy = -((NROWS-1)/2)*CH-0.35;
+  chip.position.y = cy + (1-chipIn)*1.4;
+  chip.position.x = ((NCOLS-1)/2*CW+CW/2+0.75) + (1-chipIn)*1.0;
+  chip.rotation.z = (1-chipIn)*0.5;
+  excelGlow.material.opacity = 0.45*sheetIn*(0.7+0.3*Math.sin(t*Math.PI*4));
+  excelLight.intensity = 1.6*sheetIn;
+  excel.position.y = L.excelPos[1] + Math.sin(t*Math.PI*2+1.2)*0.04;
+
+  /* камера: мягкий облёт */
+  camera.position.set(Math.sin(t*Math.PI*2)*0.7, 1.05+Math.sin(t*Math.PI*4)*0.12, L.camD);
+  camera.lookAt(0, 0.15, 0);
+
+  /* fade на стыке цикла */
+  document.getElementById("fade").style.opacity = String(clamp01(1-Math.min(t,1-t)*16));
+
+  renderer.render(scene,camera);
+}
+let raf = 0, running = false, qaFrozen = false;
+/* ?t=0.93 — отрисуать нужный кадр и остановить цикл (headless QA) */
+(function(){
+  if(QA_FREEZE){
+    qaFrozen = true;
+    elapsed = Math.max(0, Math.min(0.999, +QA_T)) * DURATION;
+    clock.getDelta();
+    tick();
+    document.title = "QA t=" + QA_T + " OK";
+    { let px="n/a";
+      try{
+        const c=document.getElementById("c");
+        const off=document.createElement("canvas"); off.width=40; off.height=80;
+        const octx=off.getContext("2d");
+        octx.drawImage(c,0,0,40,80);
+        const d=octx.getImageData(0,0,40,80).data;
+        const nb=[11,10,18]; let non=0;
+        const samp={t:[0,0,0],m:[0,0,0],b:[0,0,0]};
+        for(let y=0;y<80;y++)for(let x=0;x<40;x++){
+          const i=(y*40+x)*4, r=d[i],g=d[i+1],b=d[i+2];
+          if(Math.abs(r-nb[0])+Math.abs(g-nb[1])+Math.abs(b-nb[2])>24) non++;
+          const k=y<25?"t":(y<58?"m":"b");
+          samp[k][0]+=r; samp[k][1]+=g; samp[k][2]+=b;
+        }
+        for(const k in samp) samp[k]=samp[k].map(v=>Math.round(v/40));
+        px=(non/3200*100).toFixed(1)+"% "+JSON.stringify(samp);
+        const img=document.createElement("img");
+        img.src=c.toDataURL("image/png");
+        img.style.cssText="position:fixed;left:0;top:60px;width:100%;z-index:98;image-rendering:pixelated";
+        document.body.appendChild(img);
+      }catch(e){ px="ERR "+e.message; }
+      const d=document.createElement("div"); d.style.cssText="position:fixed;bottom:0;left:0;right:0;background:#111;color:#0f0;font:11px monospace;z-index:99;padding:6px;white-space:pre-wrap"; d.textContent="QA t="+QA_T+" | vw="+window.innerWidth+"x"+window.innerHeight+" | portrait="+document.body.classList.contains("portrait")+" | excelPos=["+excel.position.x.toFixed(1)+","+excel.position.y.toFixed(1)+"] photoPos=["+photo.position.x.toFixed(1)+","+photo.position.y.toFixed(1)+"] camD="+L.camD.toFixed(1)+" | CANVAS "+px; document.body.appendChild(d); }
+  }
+})();
+function startLoop(){
+  if(running || qaFrozen) return;
+  running = true; clock.getDelta();
+  const step = ()=>{ if(!running) return; raf = requestAnimationFrame(step); tick(); };
+  step();
+}
+document.addEventListener("visibilitychange", ()=>{
+  if(document.hidden){ running = false; cancelAnimationFrame(raf); }
+  else startLoop();
+});
+startLoop();
+})();
+</script>
+</body>
+</html>
