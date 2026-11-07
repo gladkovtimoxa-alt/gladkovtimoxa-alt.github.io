@@ -522,6 +522,9 @@
   function openLogin(message) {
     $("#login-status").textContent = message || "";
     $("#login-status").className = "status";
+    const tg = $("#login-tg"), max = $("#login-max");
+    if (state.cfg.telegram_bot) { tg.href = `https://t.me/${state.cfg.telegram_bot}?start=login`; tg.hidden = false; } else { tg.hidden = true; }
+    if (state.cfg.max_bot) { max.href = `https://max.ru/${state.cfg.max_bot}?start=login`; max.hidden = false; } else { max.hidden = true; }
     $("#login-dlg").showModal();
     setTimeout(() => $("#login-email").focus(), 50);
   }

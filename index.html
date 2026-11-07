@@ -434,6 +434,11 @@
     <input class="field" id="login-email" type="email" autocomplete="email" required>
     <button class="btn primary" type="button" id="login-send" data-i18n="login.send">Получить ссылку</button>
     <p class="status" id="login-status" role="status"></p>
+    <p class="muted" style="margin:8px 0 0" data-i18n="login.messenger">Или войдите через бота — ссылку пришлём прямо в чат:</p>
+    <div style="display:flex;gap:8px">
+      <a class="btn small social tg" id="login-tg" target="_blank" rel="noopener" hidden>Telegram</a>
+      <a class="btn small social" id="login-max" target="_blank" rel="noopener" hidden>MAX</a>
+    </div>
   </form>
 </dialog>
 
